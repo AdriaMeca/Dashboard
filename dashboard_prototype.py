@@ -1,14 +1,18 @@
+from holoviews import opts, dim
 from sodapy import Socrata
 
 import geopandas as gpd
+import holoviews as hv
 import matplotlib.animation as ani
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import streamlit as st
 
+
+hv.extension('matplotlib')
+hv.output(fig='svg', size=300)
 
 def get_me_pie(i, df, column, year, labels, fig, ax, title):
     """
@@ -78,7 +82,30 @@ def load_dataframes():
         cf['relacioagressor'] == 'Germà / germans', 'relacioagressor'
     ] = 'Germà/germans'
 
-    return af, cf
+    #Guillem's Dataframe is insane.
+    options = [c for c in af if c.startswith('v_')]
+    types_of_violence = ['Physical', 'Psychological', 'Sexual', 'Economical']
+    conversion = {c: t for c, t in zip(options, types_of_violence)}
+
+    gf = []
+    n = len(types_of_violence)
+    for year in range(2013, 2021):
+        r = pd.DataFrame(columns=('s', 't', 'v'))
+        for i in range(n):
+            for j in range(i+1, n):
+                c1, c2 = options[i], options[j]
+                v1, v2 = conversion[c1], conversion[c2]
+
+                temp = af[af['any'] == str(year)][[c1, c2]]
+                temp[c1] = temp[c1].replace({'': v1, 'Sí': v1, 'No': f'No {v1}'})
+                temp[c2] = temp[c2].replace({'': v2, 'Sí': v2, 'No': f'No {v2}'})
+                temp = temp.rename(columns=dict([(c1, 's'), (c2, 't')])).value_counts()
+
+                for k, v in zip(temp.index, temp.values):
+                    r = r.append({'s': k[0], 't': k[1], 'v': float(v)}, ignore_index=True)
+        gf.append(r)
+
+    return af, cf, gf
 
 @st.cache(show_spinner=False)
 def load_map():
@@ -104,7 +131,7 @@ def load_map():
                 number_citizens[i, j] = temp2[region]
             except KeyError:
                 number_calls[i, j] = 0.0
-                number_citizens[i, j] = 0.0
+                number_citizens[i, j] = 1.0
         catalonia_map[year] = 10**6 * number_calls[i, :] / number_citizens[i, :]
     return catalonia_map
 
@@ -116,7 +143,7 @@ final_year = 2020
 list_years = list(range(first_year, final_year+1))
 
 #We load the Dataframes.
-phone_calls, cf = load_dataframes()
+phone_calls, cf, gf = load_dataframes()
 
 #
 #1.
@@ -260,7 +287,6 @@ labels = {
 
 col1, _, col2 = st.columns([2, 1, 2])
 with col1:
-    st.empty()
     title = st.selectbox('Select a topic', titles.keys())
 with col2:
     year = st.select_slider('Select a year', list_years, key='pie')
@@ -281,3 +307,38 @@ with col3:
         for j in range(n-1, -1, -1):
             get_me_pie(j, cf, column, year, labels[title], pie_fig, ax, title)
             pie.pyplot(pie_fig)
+
+#
+#3.
+#
+
+#DrGuillem: madness in the form of a chart.
+categories = [
+    'Sexual',
+    'No Sexual',
+    'Economical',
+    'No Economical',
+    'Physical',
+    'No Physical',
+    'Psychological',
+    'No Psychological'
+]
+
+
+_, col3, _ = st.columns([1, 8, 1])
+with col3:
+    year = st.select_slider('Select a year', list_years, key='chord')
+    categories_df = hv.Dataset(pd.DataFrame(categories, columns=['Option']))
+
+    chord = hv.Chord((gf[{y: i for i, y in enumerate(list_years)}[year]], categories_df))
+    chord.opts(
+        opts.Chord(
+            cmap='PuRd',
+            edge_cmap='PuRd',
+            edge_color=dim('t').str(),
+            node_color='Option',
+            labels='Option'
+        )
+    )
+    chord_fig = hv.render(chord, backend='matplotlib')
+    st.pyplot(chord_fig)
