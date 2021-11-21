@@ -1,21 +1,89 @@
 from sodapy import Socrata
 
 import geopandas as gpd
+import matplotlib.animation as ani
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import streamlit as st
 
+
+def get_me_pie(i, df, column, year, labels, fig, ax, title):
+    """
+    Function that builds the pie chart.
+    """
+    ax.clear()
+
+    series = df.loc[df['any'] == str(year), column].value_counts().sort_values()
+
+    fs = 12
+    if title == 'Victim-aggressor relationship':
+        fs = 11
+        options = ['Germà/germans', 'Altres familiars', 'Pare', 'Fill/fills']
+        temp = {l: 0 for l in labels}
+        for k in series.index:
+            if k in options:
+                temp['Family'] += series[k]
+            elif k == 'Exparella':
+                temp['Partner'] += series[k]
+            elif k == 'Parella':
+                temp['Former partner'] += series[k]
+        series = pd.Series(temp).sort_values()
+
+    values = series.values / series.values.sum()
+    labels = [f'{l} ({v:.1%})' for v, l in zip(values, labels)]
+
+    n = len(labels)
+    if n == 2:
+        colors = [cmap(int(256/i)) for i in range(2, 0, -1)]
+    else:
+        colors = [cmap(int(256*i/(n-1))) for i in range(n)]
+
+    explode = [0.002 * i for _ in range(n)]
+
+    patches, texts = ax.pie(x=series.values, colors=colors, explode=explode)
+    ax.legend(patches, labels, loc='lower right', framealpha=0.7)
+
+    circle = plt.Circle(xy=(0, 0), radius=0.7, fc='white')
+    ax.annotate(title, xy=(0, 0), ha='center', fontsize=fs)
+
+    fig = plt.gcf()
+    fig.gca().add_artist(circle)
+    fig.tight_layout()
+
 @st.cache(show_spinner=False)
-def load_calls_dataframe():
+def load_dataframes():
+    """
+    Function that loads the Dataframes.
+    """
     client = Socrata("analisi.transparenciacatalunya.cat", None)
     result = client.get("q2sg-894k", limit=150000)
-    return pd.DataFrame.from_records(result)
+
+    af = pd.DataFrame.from_records(result)
+
+    #Special modifications needed for Clara's Dataframe.
+    cf = pd.DataFrame.from_records(result)
+    cf.loc[
+        cf['edat'] == 'Menors de 18 anys', 'edat'
+    ] = 'Menor de 18 anys'
+    cf.loc[
+        cf['edat'] == 'Entre 18 i 30 anys', 'edat'
+    ] = 'Entre 18 i 31 anys'
+    cf.loc[
+        cf['relacioagressor'] == 'Fill / fills', 'relacioagressor'
+    ] = 'Fill/fills'
+    cf.loc[
+        cf['relacioagressor'] == 'Germà / germans', 'relacioagressor'
+    ] = 'Germà/germans'
+
+    return af, cf
 
 @st.cache(show_spinner=False)
 def load_map():
     """
-    Logical structure that builds the map of Catalonia.
+    Function that builds the map of Catalonia.
     """
     catalonia_map = gpd.read_file("./data/catalonia_map.geojson")
     population = pd.read_excel("./data/population.xls")
@@ -25,7 +93,7 @@ def load_map():
 
     number_calls = np.zeros((number_years, number_regions))
     number_citizens = np.zeros((number_years, number_regions))
-    for i, year in enumerate(range(first_year, final_year+1)):
+    for i, year in enumerate(range(first_year, chosen_year+1)):
         regions_column = population.columns[0]
 
         temp1 = phone_calls[phone_calls['any'] == str(year)]['comarca'].value_counts()
@@ -41,6 +109,23 @@ def load_map():
     return catalonia_map
 
 #Constants and general settings.
+cmap = cm.get_cmap('PuRd')
+
+first_year = 2013
+final_year = 2020
+list_years = list(range(first_year, final_year+1))
+
+#We load the Dataframes.
+phone_calls, cf = load_dataframes()
+
+#
+#1.
+#
+
+st.title('Title')
+st.markdown('This is a test.')
+
+#DrMeca: this is one of my interactive plots.
 months = 12
 conversion = {
     'Gener': 1,
@@ -71,29 +156,16 @@ english_names = [
     'December'
 ]
 
-first_year = 2013
+chosen_year = st.select_slider('Select a year', list_years, key='map')
+number_years = (chosen_year-first_year) + 1
 
-
-phone_calls = load_calls_dataframe()
-
-#
-#1.
-#
-
-st.title('Title')
-st.markdown('This is a test.')
-
-#DrMeca: this is one of my interactive plots.
-final_year = st.slider('Chosen year', min_value=2013, max_value=2020, step=1)
-number_years = (final_year-first_year) + 1
-
-monthly_figure, ax = plt.subplots()
+month_fig, ax = plt.subplots()
 
 ax.grid(linewidth=0.1)
 
 square = np.zeros(months)
 cumulative = np.zeros(months)
-for year in range(first_year, final_year+1):
+for year in range(first_year, chosen_year+1):
     series = phone_calls[phone_calls['any'] == str(year)]['mes'].value_counts()
     series.index = [conversion[month] for month in series.index]
     series = series.sort_index()
@@ -127,17 +199,85 @@ ax.set_ylabel('Number of phone calls')
 #DrLior: the famous map of Catalonia.
 catalonia_map = load_map()
 
-ax = catalonia_map.plot(column=final_year, cmap='PuRd', vmin=0, vmax=3000)
+ax = catalonia_map.plot(column=chosen_year, cmap='PuRd', vmin=0, vmax=3000)
 ax.set_axis_off()
 
-map_figure = ax.get_figure()
-cax = map_figure.add_axes([0.8, 0.1, 0.05, 0.8])
-sm = plt.cm.ScalarMappable(cmap='PuRd', norm=plt.Normalize(vmin=0, vmax=3000))
-cbar = map_figure.colorbar(sm, cax=cax, spacing='uniform')
+map_fig = ax.get_figure()
+cax = map_fig.add_axes([0.8, 0.1, 0.05, 0.8])
+sm = cm.ScalarMappable(cmap='PuRd', norm=plt.Normalize(vmin=0, vmax=3000))
+cbar = map_fig.colorbar(sm, cax=cax, spacing='uniform')
 cbar.set_label("$10^{6}\\cdot$ (Number of phone calls$\\,/\\,$Number of citizens)")
 
 col1, col2 = st.columns(2)
 with col1:
-    st.pyplot(monthly_figure)
+    st.pyplot(month_fig)
 with col2:
-    st.pyplot(map_figure)
+    st.pyplot(map_fig)
+
+#
+#2.
+#
+
+#DraClara: the awesome pie chart.
+pie_fig, ax = plt.subplots()
+
+titles = {
+    'Age of the victim': 'edat',
+    'Civil state of the victim': 'estatcivil',
+    'Sex of the victim': 'sexe',
+    'Victim-aggressor relationship': 'relacioagressor'
+}
+
+labels = {
+    'Age of the victim': [
+        'Unknown',
+        '${}<18$ years old',
+        '${}>60$ years old',
+        '$\in[51,60]$ years old',
+        '$\in[18,31]$ years old',
+        '$\in[41,50]$ years old',
+        '$\in[31,40]$ years old'
+    ],
+    'Civil state of the victim': [
+        'Widow',
+        'Single',
+        'Separated',
+        'De facto couple',
+        'Unknown',
+        'Divorced',
+        'Married'
+    ],
+    'Sex of the victim': [
+        'Men',
+        'Women'
+    ],
+    'Victim-aggressor relationship': [
+        'Family',
+        'Partner',
+        'Former partner'
+    ]
+}
+
+col1, _, col2 = st.columns([2, 1, 2])
+with col1:
+    st.empty()
+    title = st.selectbox('Select a topic', titles.keys())
+with col2:
+    year = st.select_slider('Select a year', list_years, key='pie')
+
+_, col3, _ = st.columns([1, 3, 1])
+with col3:
+    column = titles[title]
+
+    get_me_pie(0, cf, column, year, labels[title], pie_fig, ax, title)
+    pie = st.pyplot(pie_fig)
+
+    pie_ani = st.sidebar.checkbox('Pie animation on')
+    if pie_ani:
+        n = 15
+        for i in range(1, n+1):
+            get_me_pie(i, cf, column, year, labels[title], pie_fig, ax, title)
+            pie.pyplot(pie_fig)
+        for j in range(n-1, -1, -1):
+            get_me_pie(j, cf, column, year, labels[title], pie_fig, ax, title)
+            pie.pyplot(pie_fig)
