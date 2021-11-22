@@ -10,9 +10,9 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-
 hv.extension('matplotlib')
 hv.output(fig='svg', size=300)
+
 
 def get_me_pie(i, df, column, year, labels, fig, ax, title):
     """
@@ -82,33 +82,10 @@ def load_dataframes():
         cf['relacioagressor'] == 'Germà / germans', 'relacioagressor'
     ] = 'Germà/germans'
 
-    #Guillem's Dataframe is insane.
-    options = [c for c in af if c.startswith('v_')]
-    types_of_violence = ['Physical', 'Psychological', 'Sexual', 'Economical']
-    conversion = {c: t for c, t in zip(options, types_of_violence)}
-
-    gf = []
-    n = len(types_of_violence)
-    for year in range(2013, 2021):
-        r = pd.DataFrame(columns=('s', 't', 'v'))
-        for i in range(n):
-            for j in range(i+1, n):
-                c1, c2 = options[i], options[j]
-                v1, v2 = conversion[c1], conversion[c2]
-
-                temp = af[af['any'] == str(year)][[c1, c2]]
-                temp[c1] = temp[c1].replace({'': v1, 'Sí': v1, 'No': f'No {v1}'})
-                temp[c2] = temp[c2].replace({'': v2, 'Sí': v2, 'No': f'No {v2}'})
-                temp = temp.rename(columns=dict([(c1, 's'), (c2, 't')])).value_counts()
-
-                for k, v in zip(temp.index, temp.values):
-                    r = r.append({'s': k[0], 't': k[1], 'v': float(v)}, ignore_index=True)
-        gf.append(r)
-
-    return af, cf, gf
+    return af, cf
 
 @st.cache(show_spinner=False)
-def load_map():
+def load_map(df, number_years):
     """
     Function that builds the map of Catalonia.
     """
@@ -123,7 +100,7 @@ def load_map():
     for i, year in enumerate(range(first_year, chosen_year+1)):
         regions_column = population.columns[0]
 
-        temp1 = phone_calls[phone_calls['any'] == str(year)]['comarca'].value_counts()
+        temp1 = df[df['any'] == str(year)]['comarca'].value_counts()
         temp2 = dict(population[[regions_column, year]].values)
         for j, region in enumerate(regions):
             try:
@@ -136,14 +113,15 @@ def load_map():
     return catalonia_map
 
 #Constants and general settings.
-cmap = cm.get_cmap('PuRd')
+cmap_name = 'PuRd'
+cmap = cm.get_cmap(cmap_name)
 
 first_year = 2013
 final_year = 2020
 list_years = list(range(first_year, final_year+1))
 
 #We load the Dataframes.
-phone_calls, cf, gf = load_dataframes()
+af, cf = load_dataframes()
 
 #
 #1.
@@ -193,7 +171,7 @@ ax.grid(linewidth=0.1)
 square = np.zeros(months)
 cumulative = np.zeros(months)
 for year in range(first_year, chosen_year+1):
-    series = phone_calls[phone_calls['any'] == str(year)]['mes'].value_counts()
+    series = af[af['any'] == str(year)]['mes'].value_counts()
     series.index = [conversion[month] for month in series.index]
     series = series.sort_index()
     square += series.values**2
@@ -224,14 +202,14 @@ ax.set_xlabel('Month')
 ax.set_ylabel('Number of phone calls')
 
 #DrLior: the famous map of Catalonia.
-catalonia_map = load_map()
+catalonia_map = load_map(af, number_years)
 
-ax = catalonia_map.plot(column=chosen_year, cmap='PuRd', vmin=0, vmax=3000)
+ax = catalonia_map.plot(column=chosen_year, cmap=cmap_name, vmin=0, vmax=3000)
 ax.set_axis_off()
 
 map_fig = ax.get_figure()
 cax = map_fig.add_axes([0.8, 0.1, 0.05, 0.8])
-sm = cm.ScalarMappable(cmap='PuRd', norm=plt.Normalize(vmin=0, vmax=3000))
+sm = cm.ScalarMappable(cmap=cmap_name, norm=plt.Normalize(vmin=0, vmax=3000))
 cbar = map_fig.colorbar(sm, cax=cax, spacing='uniform')
 cbar.set_label("$10^{6}\\cdot$ (Number of phone calls$\\,/\\,$Number of citizens)")
 
@@ -313,32 +291,46 @@ with col3:
 #
 
 #DrGuillem: madness in the form of a chart.
-categories = [
-    'Sexual',
-    'No Sexual',
-    'Economical',
-    'No Economical',
-    'Physical',
-    'No Physical',
-    'Psychological',
-    'No Psychological'
-]
+_, col, _ = st.columns([1, 4, 1])
+with col:
+    old_options = [c for c in af if c.startswith('v_')]
+    new_options = ['Physical', 'Psychological', 'Sexual', 'Economical']
+    types_of_violence = st.multiselect('Select a violence', options=new_options)
 
+    conversion = {n: o for o, n in zip(old_options, new_options)}
 
-_, col3, _ = st.columns([1, 8, 1])
-with col3:
-    year = st.select_slider('Select a year', list_years, key='chord')
-    categories_df = hv.Dataset(pd.DataFrame(categories, columns=['Option']))
+    categories = []
+    for v in types_of_violence:
+        categories.append(v)
+        categories.append(f'No {v}')
 
-    chord = hv.Chord((gf[{y: i for i, y in enumerate(list_years)}[year]], categories_df))
-    chord.opts(
-        opts.Chord(
-            cmap='PuRd',
-            edge_cmap='PuRd',
-            edge_color=dim('t').str(),
-            node_color='Option',
-            labels='Option'
+    n = len(types_of_violence)
+    if n >= 2:
+        gf = pd.DataFrame(columns=('s', 't', 'v'))
+        for i in range(n):
+            for j in range(i+1, n):
+                n1, n2 = types_of_violence[i], types_of_violence[j]
+                o1, o2 = conversion[n1], conversion[n2]
+
+                temp = af[af['any'] == '2020'][[o1, o2]]
+                temp[o1] = temp[o1].replace({'': n1, 'Sí': n1, 'No': f'No {n1}'})
+                temp[o2] = temp[o2].replace({'': n2, 'Sí': n2, 'No': f'No {n2}'})
+                temp = temp.rename(columns=dict([(n1, 's'), (n2, 't')])).value_counts()
+
+                for k, v in zip(temp.index, temp.values):
+                    gf = gf.append({'s': k[0], 't': k[1], 'v': float(v)}, ignore_index=True)
+
+        categories_df = hv.Dataset(pd.DataFrame(categories, columns=['Option']))
+
+        chord = hv.Chord((gf, categories_df))
+        chord.opts(
+            opts.Chord(
+                cmap=cmap_name,
+                edge_cmap=cmap_name,
+                edge_color=dim('t').str(),
+                node_color='Option',
+                labels='Option'
+            )
         )
-    )
-    chord_fig = hv.render(chord, backend='matplotlib')
-    st.pyplot(chord_fig)
+        chord_fig = hv.render(chord, backend='matplotlib')
+        st.pyplot(chord_fig)
