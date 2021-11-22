@@ -1,5 +1,6 @@
 from holoviews import opts, dim
 from sodapy import Socrata
+from time import sleep
 
 import geopandas as gpd
 import holoviews as hv
@@ -13,6 +14,48 @@ import streamlit as st
 hv.extension('matplotlib')
 hv.output(fig='svg', size=300)
 
+def get_me_line(i, y_data, period, fig, ax):
+    """
+    Function that builds the line chart.
+    """
+    global C1, C2
+
+    ax.clear()
+
+    ylim = {
+        1: (668.35, 1892.65),
+        3: (2319.3, 5414.7),
+        4: (3185.55, 6187.45),
+        6: (5116.6, 8073.4)
+    }
+
+    x_temp, y_temp = [], []
+    for j in range(0, i, period):
+        x_temp.append(j+period)
+        y_temp.append(sum(y_data[j:j+period]))
+
+    ax.plot(x_temp, y_temp, marker='o', color=C1)
+
+    ax.set_xlim(0, period+96)
+    ax.set_xticks(range(0, 97, 12))
+    ax.set_xlabel('Time (months)')
+
+    ymin, ymax = ylim[period]
+    ax.set_ylim(ymin, ymax)
+    ax.set_ylabel('Number of phone calls')
+
+    if i == 0:
+        ax.text(6, ymax, f'2013', ha='center', va='bottom', color='white')
+
+    counter, correction = 0, 0
+    for j in range(0, i, period):
+        if j % 12 == 0:
+            if j > 0:
+                ax.axvline(j, linestyle='--', lw=0.3, color=C1, zorder=0)
+            if counter == 7:
+                correction += period / 2
+            ax.text(j+correction+6, ymax, f'{counter+2013}', ha='center', va='bottom')
+            counter += 1
 
 def get_me_pie(i, df, column, year, labels, fig, ax, title):
     """
@@ -62,13 +105,15 @@ def load_dataframes():
     """
     Function that loads the Dataframes.
     """
+    global MONTH_CONVERSION
+
     client = Socrata("analisi.transparenciacatalunya.cat", None)
     result = client.get("q2sg-894k", limit=150000)
 
-    af = pd.DataFrame.from_records(result)
-
-    #Special modifications needed for Clara's Dataframe.
     cf = pd.DataFrame.from_records(result)
+    df = pd.DataFrame.from_records(result)
+
+    #Modifications needed for Clara's Dataframe.
     cf.loc[
         cf['edat'] == 'Menors de 18 anys', 'edat'
     ] = 'Menor de 18 anys'
@@ -82,10 +127,20 @@ def load_dataframes():
         cf['relacioagressor'] == 'Germà / germans', 'relacioagressor'
     ] = 'Germà/germans'
 
-    return af, cf
+    #Special treatment of my data.
+    x_temp, y_temp = [], []
+    for idx, year in enumerate(range(2013, 2021)):
+        series = df[df['any'] == str(year)]['mes'].value_counts()
+        series.index = [MONTH_CONVERSION[month] for month in series.index]
+        series = series.sort_index()
+
+        x_temp += list(series.index + 12*idx)
+        y_temp += list(series.values)
+
+    return [x_temp, y_temp], df, cf
 
 @st.cache(show_spinner=False)
-def load_map(df, number_years):
+def load_map(df, first_year, chosen_year):
     """
     Function that builds the map of Catalonia.
     """
@@ -95,6 +150,7 @@ def load_map(df, number_years):
     regions = catalonia_map['nom_comar'].values
     number_regions = len(regions)
 
+    number_years = (chosen_year-first_year) + 1
     number_calls = np.zeros((number_years, number_regions))
     number_citizens = np.zeros((number_years, number_regions))
     for i, year in enumerate(range(first_year, chosen_year+1)):
@@ -112,27 +168,19 @@ def load_map(df, number_years):
         catalonia_map[year] = 10**6 * number_calls[i, :] / number_citizens[i, :]
     return catalonia_map
 
+
 #Constants and general settings.
 cmap_name = 'PuRd'
 cmap = cm.get_cmap(cmap_name)
+
+COLORS = [cmap(int(256*i/3)) for i in range(4)]
+C1, C2 = COLORS[2:]
 
 first_year = 2013
 final_year = 2020
 list_years = list(range(first_year, final_year+1))
 
-#We load the Dataframes.
-af, cf = load_dataframes()
-
-#
-#1.
-#
-
-st.title('Title')
-st.markdown('This is a test.')
-
-#DrMeca: this is one of my interactive plots.
-months = 12
-conversion = {
+MONTH_CONVERSION = {
     'Gener': 1,
     'Febrer': 2,
     'Març': 3,
@@ -146,6 +194,22 @@ conversion = {
     'Novembre': 11,
     'Desembre': 12
 }
+
+#We load the Dataframes.
+phone_data, af, cf = load_dataframes()
+
+#Sidebar options.
+st.sidebar.header("Animation's control panel")
+line_ani = st.sidebar.checkbox('Line animation on')
+pie_ani = st.sidebar.checkbox('Pie animation on')
+
+#Title.
+st.title('Title')
+st.markdown('This is a test.')
+#
+#1. DrMeca: this is one of my interactive plots.
+#
+months = 12
 english_names = [
     'January',
     'February',
@@ -168,41 +232,55 @@ month_fig, ax = plt.subplots()
 
 ax.grid(linewidth=0.1)
 
+x_data, y_data = phone_data
+
 square = np.zeros(months)
 cumulative = np.zeros(months)
-for year in range(first_year, chosen_year+1):
-    series = af[af['any'] == str(year)]['mes'].value_counts()
-    series.index = [conversion[month] for month in series.index]
-    series = series.sort_index()
-    square += series.values**2
-    cumulative += series.values
+for i in range(number_years):
+    phone_calls = np.array(y_data[12*i:12*(i+1)])
 
-    ax.plot(series.index, series.values, linewidth=0.5, color='tab:gray')
+    square += phone_calls**2
+    cumulative += phone_calls
+
+    ax.plot(range(1, months+1), phone_calls, lw=0.3, color=C1)
+
 square /= number_years
 cumulative /= number_years
 
 error = np.sqrt((square-cumulative**2)/number_years)
 
-ax.axhline(sum(cumulative)/len(cumulative), linestyle='--', color='tab:orange', zorder=0)
-ax.errorbar(range(1, months+1),
-            cumulative,
-            error,
-            elinewidth=2,
-            ecolor='tab:gray',
-            capsize=5,
-            marker='s',
-            markersize=8,
-            linewidth=3,
-            color='tab:blue')
+ax.axhline(sum(cumulative)/len(cumulative), linestyle='--', color=C2, zorder=0)
+
+ax.fill_between(
+    range(1, months+1),
+    cumulative-error,
+    cumulative+error,
+    color=C1,
+    alpha=0.2,
+    zorder=-1
+)
+
+ax.errorbar(
+    range(1, months+1),
+    cumulative,
+    error,
+    elinewidth=2,
+    capsize=5,
+    marker='s',
+    markersize=8,
+    linewidth=3,
+    color=C1
+)
 
 ax.set_xticks(range(1, months+1))
 ax.set_xticklabels(english_names, rotation=45)
 
 ax.set_xlabel('Month')
 ax.set_ylabel('Number of phone calls')
-
-#DrLior: the famous map of Catalonia.
-catalonia_map = load_map(af, number_years)
+#
+#1.5 DrLior: the famous map of Catalonia.
+#
+catalonia_map = load_map(af, first_year, chosen_year)
 
 ax = catalonia_map.plot(column=chosen_year, cmap=cmap_name, vmin=0, vmax=3000)
 ax.set_axis_off()
@@ -218,12 +296,29 @@ with col1:
     st.pyplot(month_fig)
 with col2:
     st.pyplot(map_fig)
-
 #
-#2.
+#2. DrMeca: unparalleled animation.
 #
+ani_fig, ax = plt.subplots()
 
-#DraClara: the awesome pie chart.
+col1, col2 = st.columns([1, 3])
+with col1:
+    period = st.selectbox('Period', options=[1, 3, 4, 6])
+with col2:
+    get_me_line(0, y_data, period, ani_fig, ax)
+    line = st.pyplot(ani_fig)
+
+    if line_ani:
+        sleep(0.5)
+        for i in range(0, len(y_data)+1):
+            get_me_line(i, y_data, period, ani_fig, ax)
+            line.pyplot(ani_fig)
+    else:
+        get_me_line(len(y_data), y_data, period, ani_fig, ax)
+        line.pyplot(ani_fig)
+#
+#3. DraClara: the awesome pie chart.
+#
 pie_fig, ax = plt.subplots()
 
 titles = {
@@ -276,7 +371,6 @@ with col3:
     get_me_pie(0, cf, column, year, labels[title], pie_fig, ax, title)
     pie = st.pyplot(pie_fig)
 
-    pie_ani = st.sidebar.checkbox('Pie animation on')
     if pie_ani:
         n = 15
         for i in range(1, n+1):
@@ -285,12 +379,9 @@ with col3:
         for j in range(n-1, -1, -1):
             get_me_pie(j, cf, column, year, labels[title], pie_fig, ax, title)
             pie.pyplot(pie_fig)
-
 #
-#3.
+#4. DrGuillem: madness in the form of a chart.
 #
-
-#DrGuillem: madness in the form of a chart.
 _, col, _ = st.columns([1, 4, 1])
 with col:
     old_options = [c for c in af if c.startswith('v_')]
