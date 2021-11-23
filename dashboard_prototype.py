@@ -57,44 +57,35 @@ def get_me_line(i, y_data, period, fig, ax):
             ax.text(j+correction+6, ymax, f'{counter+2013}', ha='center', va='bottom')
             counter += 1
 
-def get_me_pie(i, df, column, year, labels, fig, ax, title):
+def get_me_pie(i, df, topic, year, fig, ax):
     """
     Function that builds the pie chart.
     """
+    global C1, C2, DICT
+
     ax.clear()
 
-    series = df.loc[df['any'] == str(year), column].value_counts().sort_values()
-
-    fs = 12
-    if title == 'Victim-aggressor relationship':
-        fs = 11
-        options = ['Germà/germans', 'Altres familiars', 'Pare', 'Fill/fills']
-        temp = {l: 0 for l in labels}
-        for k in series.index:
-            if k in options:
-                temp['Family'] += series[k]
-            elif k == 'Exparella':
-                temp['Partner'] += series[k]
-            elif k == 'Parella':
-                temp['Former partner'] += series[k]
-        series = pd.Series(temp).sort_values()
-
+    series = df.loc[df['any'] == str(year), DICT[topic]].value_counts().sort_values()
     values = series.values / series.values.sum()
-    labels = [f'{l} ({v:.1%})' for v, l in zip(values, labels)]
+    labels = [f'{DICT[l]} ({v:.1%})' for v, l in zip(values, series.index)]
 
     n = len(labels)
-    if n == 2:
-        colors = [cmap(int(256/i)) for i in range(2, 0, -1)]
-    else:
-        colors = [cmap(int(256*i/(n-1))) for i in range(n)]
+    colors = [C1, C2] if n == 2 else [cmap(int(256*i/(n-1))) for i in range(n)]
+    explode = [i/1000 for _ in range(n)]
 
-    explode = [0.002 * i for _ in range(n)]
+    patches, texts = ax.pie(
+        x=series.values,
+        colors=colors,
+        explode=explode,
+        startangle=i/3
+    )
 
-    patches, texts = ax.pie(x=series.values, colors=colors, explode=explode)
     ax.legend(patches, labels, loc='lower right', framealpha=0.7)
 
     circle = plt.Circle(xy=(0, 0), radius=0.7, fc='white')
-    ax.annotate(title, xy=(0, 0), ha='center', fontsize=fs)
+
+    fontsize = 11 if topic.startswith('V') else 12
+    ax.annotate(topic, xy=(0, 0), ha='center', fontsize=fontsize)
 
     fig = plt.gcf()
     fig.gca().add_artist(circle)
@@ -193,6 +184,47 @@ MONTH_CONVERSION = {
     'Octubre': 10,
     'Novembre': 11,
     'Desembre': 12
+}
+
+DICT = {
+    'Abril': 'April',
+    'Age of the victim': 'edat',
+    'Agost': 'August',
+    'Altres': 'Other',
+    'Altres familiars': 'Other relatives',
+    'Casada': 'Married',
+    'Civil status of the victim': 'estatcivil',
+    'Dona': 'Women',
+    'Desembre': 'December',
+    'Divorciada': 'Divorced',
+    'Exparella': 'Former partner',
+    'Febrer': 'February',
+    'Fill/fills': 'Son',
+    'Gener': 'January',
+    'Germà/germans': 'Brother',
+    'Home': 'Men',
+    'Juliol': 'July',
+    'Juny': 'June',
+    'Entre 18 i 31 anys': "$\\in[18,31)$ years old",
+    'Entre 31 i 40 anys': "$\\in[31,40]$ years old",
+    'Entre 41 i 50 anys': "$\\in[41,51]$ years old",
+    'Entre 51 i 60 anys': "$\\in[51,60]$ years old",
+    'Maig': 'May',
+    'Març': 'March',
+    'Menor de 18 anys': "${}<18$ years old",
+    'Més de 60 anys': "${}>60$ years old",
+    'No consta': 'Unknown',
+    'Novembre': 'November',
+    'Octubre': 'October',
+    'Pare': 'Father',
+    'Parella': 'Partner',
+    'Parella de fet': 'De facto couple',
+    'Separada': 'Separated',
+    'Setembre': 'September',
+    'Sex of the victim': 'sexe',
+    'Soltera': 'Single',
+    'Victim-aggressor relationship': 'relacioagressor',
+    'Vídua': 'Widow'
 }
 
 #We load the Dataframes.
@@ -321,63 +353,32 @@ with col2:
 #
 pie_fig, ax = plt.subplots()
 
-titles = {
-    'Age of the victim': 'edat',
-    'Civil state of the victim': 'estatcivil',
-    'Sex of the victim': 'sexe',
-    'Victim-aggressor relationship': 'relacioagressor'
-}
-
-labels = {
-    'Age of the victim': [
-        'Unknown',
-        '${}<18$ years old',
-        '${}>60$ years old',
-        '$\in[51,60]$ years old',
-        '$\in[18,31]$ years old',
-        '$\in[41,50]$ years old',
-        '$\in[31,40]$ years old'
-    ],
-    'Civil state of the victim': [
-        'Widow',
-        'Single',
-        'Separated',
-        'De facto couple',
-        'Unknown',
-        'Divorced',
-        'Married'
-    ],
-    'Sex of the victim': [
-        'Men',
-        'Women'
-    ],
-    'Victim-aggressor relationship': [
-        'Family',
-        'Partner',
-        'Former partner'
-    ]
-}
-
 col1, _, col2 = st.columns([2, 1, 2])
 with col1:
-    title = st.selectbox('Select a topic', titles.keys())
+    topic = st.selectbox(
+        label='Select a topic',
+        options=[
+            'Age of the victim',
+            'Civil status of the victim',
+            'Sex of the victim',
+            'Victim-aggressor relationship'
+        ]
+    )
 with col2:
     year = st.select_slider('Select a year', list_years, key='pie')
 
 _, col3, _ = st.columns([1, 3, 1])
 with col3:
-    column = titles[title]
-
-    get_me_pie(0, cf, column, year, labels[title], pie_fig, ax, title)
+    get_me_pie(0, cf, topic, year, pie_fig, ax)
     pie = st.pyplot(pie_fig)
 
     if pie_ani:
         n = 15
         for i in range(1, n+1):
-            get_me_pie(i, cf, column, year, labels[title], pie_fig, ax, title)
+            get_me_pie(i, cf, topic, year, pie_fig, ax)
             pie.pyplot(pie_fig)
         for j in range(n-1, -1, -1):
-            get_me_pie(j, cf, column, year, labels[title], pie_fig, ax, title)
+            get_me_pie(j, cf, topic, year, pie_fig, ax)
             pie.pyplot(pie_fig)
 #
 #4. DrGuillem: madness in the form of a chart.
