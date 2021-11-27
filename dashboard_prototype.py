@@ -14,6 +14,8 @@ import streamlit as st
 
 
 #Constants and general settings.
+st.set_page_config(layout='wide')
+
 hv.extension('matplotlib')
 hv.output(fig='svg', size=300)
 
@@ -174,6 +176,12 @@ def load_map(df, chosen_year):
 
 
 #Logical functions.
+def add_hspace(char, num):
+    """
+    Function that adds extra horizontal space to align objects in Streamlit.
+    """
+    return num * char
+
 def add_vspace(num):
     """
     Function that adds extra vertical space to align objects in Streamlit.
@@ -295,8 +303,71 @@ def main():
 
 #Pages of the dashboard.
 def title():
-    st.title('Title')
-    st.markdown('This is a test.')
+    #Title.
+    t = """
+        <h1 style='font-size: 60px; text-align: center'>
+            Gender violence, a dark shadow of the pandemic
+        </h1>
+    """
+    #Authors.
+    n = """
+        <div style='display: grid; text-align: center'>
+            <div class='grid-item' style='grid-row-start: 1; font-size: 30px'>
+                <b>Adrià Meca Montserrat</b><br>
+                <p>
+                    Git Master<br>
+                    Python wizard
+                </p>
+            </div>
+            <div class='grid-item' style='grid-row-start: 1; font-size: 30px'>
+                <b>Clara Colet Díaz</b><br>
+                <p>
+                    Team mediator<br>
+                    Pie chart leading expert
+                </p>
+            </div>
+            <div class='grid-item' style='grid-row-start: 1; font-size: 30px'>
+                <b>Guillem Güell Paule</b><br>
+                <p>
+                    Brainstorming manager<br>
+                    Complex graphs CEO
+                </p>
+            </div>
+            <div class='grid-item' style='grid-row-start: 1; font-size: 30px'>
+                <b>Lior Tetro</b><br>
+                <p>
+                    Head writer<br>
+                    Philosopher
+                </p>
+            </div>
+        </div>
+    """
+    #Abstract.
+    a = """
+        <div style='display: grid; text-align: center'>
+            <div class='grid-item' style='grid-row-start: 1; font-size: 30px'></div>
+            <div class='grid-item' style='grid-row-start: 1; font-size: 30px; text-align: left; width: 1200px'>
+                <b>Abstract:</b> Our society is assimilating the changes that
+                SARS-CoV-2 has induced. An important and sensitive topic is gender violence.
+                Some information has been exposed in general media regarding the relation
+                between the famous pandemic spike, and a big increase in gender-based
+                complaints. However, the lack of scientific rigor envelops the whole topic.
+                Here, we shed light on how and why gender violence has increased due to
+                Covid-19. These results can have an immediate application in resouce
+                distribution of victim attention through telephone lines, and in the
+                preparation of awareness campaigns.
+            </div>
+        </div>
+    """
+
+    _, col, _ = st.columns([1, 1, 1])
+    with col:
+        st.image(image="./images/ub-logo.png")
+    st.markdown(t, unsafe_allow_html=True)
+    add_vspace(1)
+    st.markdown(n, unsafe_allow_html=True)
+    add_vspace(4)
+    st.markdown(a, unsafe_allow_html=True)
 
 def results_map(data, df):
     global CMAP_NAME, FIRST_YEAR, LIST_YEARS, MONTH_CONVERSION, NUMBER_MONTHS
