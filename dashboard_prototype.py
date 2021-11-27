@@ -62,6 +62,7 @@ DICT = {
     'Home': 'Men',
     'Juliol': 'July',
     'Juny': 'June',
+    'Economical': 'v_economica',
     'Entre 18 i 31 anys': "$\\in[18,31)$ years old",
     'Entre 31 i 40 anys': "$\\in[31,40]$ years old",
     'Entre 41 i 50 anys': "$\\in[41,51]$ years old",
@@ -76,9 +77,12 @@ DICT = {
     'Pare': 'Father',
     'Parella': 'Partner',
     'Parella de fet': 'De facto couple',
+    'Psychological': 'v_psicologica',
+    'Physical': 'v_fisica',
     'Separada': 'Separated',
     'Setembre': 'September',
     'Sex of the victim': 'sexe',
+    'Sexual': 'v_sexual',
     'Soltera': 'Single',
     'Victim-aggressor relationship': 'relacioagressor',
     'Vídua': 'Widow'
@@ -91,7 +95,7 @@ def load_dataframes():
     """
     Function that loads the Dataframes.
     """
-    global MONTH_CONVERSION
+    global LIST_YEARS, MONTH_CONVERSION
 
     client = Socrata("analisi.transparenciacatalunya.cat", None)
     result = client.get("q2sg-894k", limit=150000)
@@ -99,7 +103,7 @@ def load_dataframes():
     cf = pd.DataFrame.from_records(result)
     df = pd.DataFrame.from_records(result)
 
-    #Modifications needed for Clara's Dataframe.
+    #Modifications needed for Clara's data.
     cf.loc[
         cf['edat'] == 'Menors de 18 anys', 'edat'
     ] = 'Menor de 18 anys'
@@ -123,7 +127,19 @@ def load_dataframes():
         x_temp += list(series.index + 12*idx)
         y_temp += list(series.values)
 
-    return [x_temp, y_temp], df, cf
+    #Special treatment of Guillem's data.
+    old_options = [c for c in df if c.startswith('v_')]
+    cnv = dict([(DICT[w], w) for w in DICT if DICT[w] in old_options])
+    evolution = dict()
+    for year in LIST_YEARS:
+        if year not in evolution:
+            evolution[year] = dict()
+        for violence in old_options:
+            number = df[df['any'] == str(year)][violence].value_counts()['Sí']
+            if violence not in evolution[year]:
+                evolution[year][cnv[violence]] = number
+
+    return [x_temp, y_temp], evolution, df, cf
 
 @st.cache(show_spinner=False)
 def load_map(df, chosen_year):
@@ -158,6 +174,13 @@ def load_map(df, chosen_year):
 
 
 #Logical functions.
+def add_vspace(num):
+    """
+    Function that adds extra vertical space to align objects in Streamlit.
+    """
+    for _ in range(num):
+        st.text('')
+
 def get_me_line(i, y_data, period, fig, ax):
     """
     Function that builds the animated line chart.
@@ -240,7 +263,7 @@ def get_me_pie(i, df, topic, year, fig, ax):
 #Control panel that chooses the page we see in the dashboard.
 def main():
     #We load the Dataframes.
-    phone_data, af, cf = load_dataframes()
+    phone_data, evolution, af, cf = load_dataframes()
 
     #Control panel.
     st.sidebar.header('Table of contents')
@@ -265,7 +288,7 @@ def main():
     elif control == 'Results pie':
         results_pie(cf)
     elif control == 'Results chord':
-        results_chord(af)
+        results_chord(af, evolution)
     elif control == 'Conclusions':
         pass
 
@@ -355,6 +378,7 @@ def results_line(y_data):
     st.sidebar.header("Animation's control panel")
     line_ani = st.sidebar.checkbox('Line animation on')
 
+    #DrMeca: one of my renowned animations.
     ani_fig, ax = plt.subplots()
 
     col1, col2 = st.columns([1, 3])
@@ -380,6 +404,7 @@ def results_pie(df):
     st.sidebar.header("Animation's control panel")
     pie_ani = st.sidebar.checkbox('Pie animation on')
 
+    #DraClara: the awesome pie chart.
     pie_fig, ax = plt.subplots()
 
     col1, _, col2 = st.columns([2, 1, 2])
@@ -410,31 +435,36 @@ def results_pie(df):
                 get_me_pie(j, df, topic, year, pie_fig, ax)
                 pie.pyplot(pie_fig)
 
-def results_chord(df):
-    _, col, _ = st.columns([1, 4, 1])
-    with col:
-        old_options = [c for c in df if c.startswith('v_')]
-        new_options = ['Physical', 'Psychological', 'Sexual', 'Economical']
-        types_of_violence = st.multiselect(
-            label='Select a violence',
-            options=new_options,
-            default=new_options[:2]
-        )
+def results_chord(df, evolution):
+    global CMAP, DICT, LIST_YEARS
 
-        conversion = {n: o for o, n in zip(old_options, new_options)}
+    #DrGuillem: madness as a plot.
+    new_options = ['Sexual', 'Economical', 'Physical', 'Psychological']
+    types_of_violence = st.multiselect(
+        label='Select a violence',
+        options=new_options,
+        default=new_options[:2]
+    )
+    n = len(types_of_violence)
 
-        categories = []
-        for v in types_of_violence:
-            categories.append(v)
-            categories.append(f'No {v}')
+    colors = dict()
+    for v, c in zip(new_options, [CMAP(int(256*i/3)) for i in range(4)]):
+        colors[v] = c
+    colors['Sexual'] = CMAP(50)
 
-        n = len(types_of_violence)
+    col1, col2 = st.columns(2)
+    with col1:
         if n >= 2:
+            categories = []
+            for v in types_of_violence:
+                categories.append(v)
+                categories.append(f'No {v}')
+
             gf = pd.DataFrame(columns=('s', 't', 'v'))
             for i in range(n):
                 for j in range(i+1, n):
                     n1, n2 = types_of_violence[i], types_of_violence[j]
-                    o1, o2 = conversion[n1], conversion[n2]
+                    o1, o2 = DICT[n1], DICT[n2]
 
                     temp = df[df['any'] == '2020'][[o1, o2]]
                     temp[o1] = temp[o1].replace({'': n1, 'Sí': n1, 'No': f'No {n1}'})
@@ -458,6 +488,34 @@ def results_chord(df):
             )
             chord_fig = hv.render(chord, backend='matplotlib')
             st.pyplot(chord_fig)
+    with col2:
+        if n >= 2:
+            bar_fig, ax = plt.subplots()
+
+            width = 0.2
+            shift = (-width) * (len(types_of_violence)-1)/2
+            for idx, violence in enumerate(types_of_violence):
+                ax.bar(
+                    [year+shift for year in LIST_YEARS],
+                    [evolution[year][violence] for year in LIST_YEARS],
+                    width=width,
+                    label=violence,
+                    color=colors[violence]
+                )
+
+                shift += width
+
+            plt.legend(
+                loc='upper center',
+                bbox_to_anchor=(0.5, 1.1),
+                ncol=len(types_of_violence)
+            )
+
+            plt.xlabel('Year')
+            plt.ylabel('Number of cases')
+
+            add_vspace(5)
+            st.pyplot(bar_fig)
 
 def conclusion():
     pass
