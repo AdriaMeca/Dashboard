@@ -1,5 +1,6 @@
 #Libraries.
 from holoviews import opts, dim
+from os.path import isfile
 from sodapy import Socrata
 from time import sleep
 
@@ -9,6 +10,7 @@ import matplotlib.animation as ani
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import pandas as pd
 import streamlit as st
 
@@ -24,6 +26,8 @@ CMAP = cm.get_cmap(CMAP_NAME)
 
 COLORS = [CMAP(int(256*i/3)) for i in range(4)]
 C1, C2 = COLORS[2:]
+
+FILENAME = './control_panel.txt'
 
 FIRST_YEAR = 2013
 FINAL_YEAR = 2020
@@ -287,6 +291,20 @@ def main():
         ]
     )
 
+    if not isfile(FILENAME):
+        with open(FILENAME, 'w') as outputfile:
+            outputfile.write(f'{control}\n')
+
+    with open(FILENAME, 'r') as inputfile:
+        for line in inputfile:
+            last_page = line.strip()
+
+    if last_page != control:
+        with open(FILENAME, 'w') as outputfile:
+            outputfile.write(f'{control}\n')
+
+        waiting_room()
+
     if control == 'Title':
         title()
     elif control == 'Results map':
@@ -298,7 +316,7 @@ def main():
     elif control == 'Results chord':
         results_chord(af, evolution)
     elif control == 'Conclusions':
-        pass
+        conclusions()
 
 
 #Pages of the dashboard.
@@ -588,9 +606,14 @@ def results_chord(df, evolution):
             add_vspace(5)
             st.pyplot(bar_fig)
 
-def conclusion():
-    pass
+def conclusions():
+    if isfile(FILENAME):
+        os.remove(FILENAME)
 
+def waiting_room():
+    for _ in range(100):
+        st.container()
+    sleep(2)
 
 #We run the main program.
 if __name__ == '__main__':
