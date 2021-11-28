@@ -104,10 +104,13 @@ def load_dataframes():
     global LIST_YEARS, MONTH_CONVERSION
 
     client = Socrata("analisi.transparenciacatalunya.cat", None)
-    result = client.get("q2sg-894k", limit=150000)
 
-    cf = pd.DataFrame.from_records(result)
-    df = pd.DataFrame.from_records(result)
+    result1 = client.get("q2sg-894k", limit=150000)
+    result2 = client.get("6rcq-y46b", limit=300)
+
+    cf = pd.DataFrame.from_records(result1)
+    df = pd.DataFrame.from_records(result1)
+    rf = pd.DataFrame.from_records(result2)
 
     #Modifications needed for Clara's data.
     cf.loc[
@@ -133,6 +136,12 @@ def load_dataframes():
         x_temp += list(series.index + 12*idx)
         y_temp += list(series.values)
 
+    calls = df['any'].value_counts().drop('2021').sort_index()
+    calls /= calls.sum()
+
+    cases = rf['any'].value_counts().drop(['2011', '2012', '2021']).sort_index()
+    cases /= cases.sum()
+
     #Special treatment of Guillem's data.
     old_options = [c for c in df if c.startswith('v_')]
     cnv = dict([(DICT[w], w) for w in DICT if DICT[w] in old_options])
@@ -145,7 +154,7 @@ def load_dataframes():
             if violence not in evolution[year]:
                 evolution[year][cnv[violence]] = number
 
-    return [x_temp, y_temp], evolution, df, cf
+    return [x_temp, y_temp], [calls.values, cases.values], evolution, df, cf
 
 @st.cache(show_spinner=False)
 def load_map(df, chosen_year):
@@ -192,6 +201,64 @@ def add_vspace(num):
     """
     for _ in range(num):
         st.text('')
+
+def get_me_corr(i, data, fig, axs):
+    global C1, C2, LIST_YEARS
+
+    axs[0].clear()
+    axs[1].clear()
+
+    calls, cases = data
+
+    fig.suptitle('Is there any correlation?', y=0.95)
+
+    axs[0].plot(
+        LIST_YEARS[:i],
+        calls[:i],
+        marker='^',
+        label='Normalized number of cases',
+        color=C1
+    )
+    axs[0].plot(
+        LIST_YEARS[:i],
+        cases[:i],
+        marker='v',
+        label='Normalized number of phone calls',
+        color=C2
+    )
+    axs[0].set_xlim(2013-0.5, 2020+0.5)
+    axs[0].set_ylim(0.11, 0.16)
+    axs[0].set_yticks(axs[0].get_yticks())
+    axs[0].set_xlabel('Year')
+    axs[0].set_ylabel('Fraction of cases/phone calls')
+    axs[0].legend(loc='upper center')
+
+    axs0x = axs[0].secondary_xaxis('top')
+    axs0y = axs[0].secondary_yaxis('right')
+    axs0x.set_xticklabels('')
+    axs0y.set_yticklabels('')
+
+    axs[1].scatter(
+        calls[:i],
+        cases[:i],
+        marker=u'$\u2640$',
+        s=300,
+        alpha=0.5,
+        color=C1
+    )
+    axs[1].set_xlim(0.110-0.005, 0.160)
+    axs[1].set_ylim(0.110, 0.155)
+    axs[1].set_yticks(axs[1].get_yticks())
+    axs[1].set_xlabel('Normalized number of phone calls')
+    axs[1].set_ylabel('Normalized number of cases')
+
+    axs1x = axs[1].secondary_xaxis('top')
+    axs1y = axs[1].secondary_yaxis('right')
+    axs1x.set_xticklabels('')
+    axs1y.set_yticklabels('')
+
+    for a in [*axs, axs0x, axs0y, axs1x, axs1y]:
+        a.tick_params(axis='both', direction='in')
 
 def get_me_line(i, y_data, period, fig, ax):
     """
@@ -246,7 +313,7 @@ def get_me_pie(i, df, topic, year, fig, ax):
     ax.clear()
 
     series = df.loc[df['any'] == str(year), DICT[topic]].value_counts().sort_values()
-    values = series.values / series.values.sum()
+    values = series.values / series.sum()
     labels = [f'{DICT[l]} ({v:.1%})' for v, l in zip(values, series.index)]
 
     n = len(labels)
@@ -275,7 +342,7 @@ def get_me_pie(i, df, topic, year, fig, ax):
 #Control panel that chooses the page we see in the dashboard.
 def main():
     #We load the Dataframes.
-    phone_data, evolution, af, cf = load_dataframes()
+    phone_data, calls_cases, evolution, af, cf = load_dataframes()
 
     #Control panel.
     st.sidebar.header('Table of contents')
@@ -287,6 +354,7 @@ def main():
             'Results line',
             'Results pie',
             'Results chord',
+            'Correlations',
             'Conclusions'
         ]
     )
@@ -315,6 +383,8 @@ def main():
         results_pie(cf)
     elif control == 'Results chord':
         results_chord(af, evolution)
+    elif control == 'Correlations':
+        correlations(calls_cases)
     elif control == 'Conclusions':
         conclusions()
 
@@ -605,6 +675,22 @@ def results_chord(df, evolution):
 
             add_vspace(5)
             st.pyplot(bar_fig)
+
+def correlations(data):
+    global C1, C2, LIST_YEARS
+
+    #Sidebar options.
+    st.sidebar.header("Animation's control panel")
+    corr_ani = st.sidebar.button('Animation on')
+
+    corr_fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+
+    get_me_corr(0, data, corr_fig, axs)
+    corr = st.pyplot(corr_fig)
+    if corr_ani:
+        for i in range(0, len(LIST_YEARS)+1):
+            get_me_corr(i, data, corr_fig, axs)
+            corr.pyplot(corr_fig)
 
 def conclusions():
     if isfile(FILENAME):
