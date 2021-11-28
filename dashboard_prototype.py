@@ -291,6 +291,17 @@ def get_me_line(i, y_data, period, fig, ax):
     ax.set_ylim(ymin, ymax)
     ax.set_ylabel('Number of phone calls')
 
+    ax2 = ax.secondary_xaxis('top')
+    ax2.set_xlim(0, period+96)
+    ax2.set_xticks(range(0, 97, 12))
+    ax2.set_xticklabels('')
+
+    ay2 = ax.secondary_yaxis('right')
+    ay2.set_yticklabels('')
+
+    for a in [ax, ax2, ay2]:
+        a.tick_params(axis='both', direction='in')
+
     if i == 0:
         ax.text(6, ymax, '2013', ha='center', va='bottom', color='white')
 
@@ -514,6 +525,17 @@ def results_map(data, df):
     ax.set_xlabel('Month')
     ax.set_ylabel('Number of phone calls')
 
+    ax2 = ax.secondary_xaxis('top')
+    ax2.set_xticks(range(1, NUMBER_MONTHS+1))
+    ax2.set_xticklabels([DICT[m] for m in MONTH_CONVERSION.keys()], rotation=45)
+    ax2.set_xticklabels('')
+
+    ay2 = ax.secondary_yaxis('right')
+    ay2.set_yticklabels('')
+
+    for a in [ax, ax2, ay2]:
+        a.tick_params(axis='both', direction='in')
+
     #DrLior: the famous map of Catalonia.
     catalonia_map = load_map(df, chosen_year)
 
@@ -528,6 +550,7 @@ def results_map(data, df):
 
     col1, col2 = st.columns(2)
     with col1:
+        add_vspace(4)
         st.pyplot(month_fig)
     with col2:
         st.pyplot(map_fig)
@@ -672,6 +695,14 @@ def results_chord(df, evolution):
 
             plt.xlabel('Year')
             plt.ylabel('Number of cases')
+
+            ax2 = ax.secondary_xaxis('top')
+            ay2 = ax.secondary_yaxis('right')
+            ax2.set_xticklabels('')
+            ay2.set_yticklabels('')
+
+            for a in [ax, ax2, ay2]:
+                a.tick_params(axis='both', direction='in')
 
             add_vspace(5)
             st.pyplot(bar_fig)
