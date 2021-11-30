@@ -473,10 +473,10 @@ def title():
                 violence has increased due to Covid-19, and we conclude that prior to the
                 pandemic the number of complaints was homogeneous in time and space, and
                 that the profile of the victim doesn't change significantly over the years.
-                We also study the connections between different types of violence, and we
+                We also study the connections between different types of violence and we
                 show if there is any correlation between complaints and real cases. These
                 results can have an immediate application in resource distribution of
-                victim attention, and in the preparation of awareness campaigns.
+                victim attention and in the preparation of awareness campaigns.
             </div>
         </div>
     """
@@ -491,13 +491,30 @@ def title():
     st.markdown(a, unsafe_allow_html=True)
 
 def methodology():
-    pass
+    t = """
+        <h1 style='font-size: 60px; text-align: center'>
+            Methodology
+        </h1>
+    """
+    st.markdown(t, unsafe_allow_html=True)
 
 def results():
-    pass
+    t = """
+        <h1 style='font-size: 60px; text-align: center'>
+            Results
+        </h1>
+    """
+    st.markdown(t, unsafe_allow_html=True)
 
 def results_map(data, df):
     global CMAP_NAME, FIRST_YEAR, LIST_YEARS, MONTH_CONVERSION, NUMBER_MONTHS
+
+    t = """
+        <p style='font-size: 45px; text-align: center'>
+            <b>Results:</b> Spatial and Temporal dependence
+        </p>
+    """
+    st.markdown(t, unsafe_allow_html=True)
 
     #DrMeca: interactive craziness.
     st.sidebar.header('Plot widgets')
@@ -585,6 +602,13 @@ def results_map(data, df):
         st.pyplot(map_fig)
 
 def results_line(y_data):
+    t = """
+        <p style='font-size: 45px; text-align: center'>
+            <b>Results:</b> Aggregated spatial evolution
+        </p>
+    """
+    st.markdown(t, unsafe_allow_html=True)
+
     #Sidebar options.
     st.sidebar.header("Plot widgets")
     line_ani = st.sidebar.checkbox('Animation on')
@@ -609,6 +633,13 @@ def results_line(y_data):
 
 def results_pie(df):
     global LIST_YEARS
+
+    t = """
+        <p style='font-size: 45px; text-align: center'>
+            <b>Results:</b> Analysis of the phone calls
+        </p>
+    """
+    st.markdown(t, unsafe_allow_html=True)
 
     #Sidebar options.
     st.sidebar.header("Plot widgets")
@@ -643,6 +674,13 @@ def results_pie(df):
 
 def results_chord(df, evolution):
     global CMAP, DICT, LIST_YEARS
+
+    t = """
+        <p style='font-size: 45px; text-align: center'>
+            <b>Results:</b> Violence interconnections
+        </p>
+    """
+    st.markdown(t, unsafe_allow_html=True)
 
     #DrGuillem: madness as a plot.
     new_options = ['Sexual', 'Economical', 'Physical', 'Psychological']
@@ -735,6 +773,13 @@ def results_chord(df, evolution):
 def correlation(data):
     global C1, C2, LIST_YEARS
 
+    t = """
+        <p style='font-size: 45px; text-align: center'>
+            <b>Results:</b> Correlation between phone calls and real cases
+        </p>
+    """
+    st.markdown(t, unsafe_allow_html=True)
+
     #Sidebar options.
     st.sidebar.header("Plot widgets")
     corr_ani = st.sidebar.button('Show results')
@@ -749,10 +794,32 @@ def correlation(data):
             corr.pyplot(corr_fig)
 
 def conclusions():
+    t = """
+        <h1 style='font-size: 60px; text-align: center'>
+            Conclusions
+        </h1>
+    """
+    st.markdown(t, unsafe_allow_html=True)
+
+def critique():
+    t = """
+        <h1 style='font-size: 60px; text-align: center'>
+            Critique
+        </h1>
+    """
+    st.markdown(t, unsafe_allow_html=True)
+
+def contributions():
+    t = """
+        <h1 style='font-size: 60px; text-align: center'>
+            Contributions
+        </h1>
+    """
+    st.markdown(t, unsafe_allow_html=True)
+
     if isfile(FILENAME):
         os.remove(FILENAME)
 
-def contributions():
     contrib = {
         'Conceptualization': [],
         'Methodology': [],
@@ -805,9 +872,6 @@ def contributions():
     _, col, _ = st.columns([1, 3, 1])
     with col:
         st.table(style.applymap(lambda _: 'background-color: #f6f2f4'))
-
-def critique():
-    pass
 
 def waiting_room():
     for _ in range(100):
