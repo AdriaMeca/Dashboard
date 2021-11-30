@@ -366,7 +366,8 @@ def main():
             'Results pie',
             'Results chord',
             'Correlations',
-            'Conclusions'
+            'Conclusions',
+            'Contributions'
         ]
     )
 
@@ -398,6 +399,8 @@ def main():
         correlations(calls_cases)
     elif control == 'Conclusions':
         conclusions()
+    elif control == 'Contributions':
+        contributions()
 
 
 #Pages of the dashboard.
@@ -726,6 +729,60 @@ def correlations(data):
 def conclusions():
     if isfile(FILENAME):
         os.remove(FILENAME)
+
+def contributions():
+    contrib = {
+        'Conceptualization': [],
+        'Methodology': [],
+        'Software': [],
+        'Validation': [],
+        'Formal analysis': [],
+        'Investigation': [],
+        'Resources': [],
+        'Data curation': [],
+        'Writing - Original draft': [],
+        'Writing - Review & editing': [],
+        'Visualization': [],
+        'Supervision': []
+    }
+
+    adria = list(len(contrib) * 'x')
+    clara = list(len(contrib) * 'x')
+    guillem = list(len(contrib) * 'x')
+    lior = list(len(contrib) * 'x')
+
+    adria[0], adria[8] = '', ''
+    clara[3], clara[11] = '', ''
+    guillem[1], guillem[11] = '', ''
+    lior[0], lior[9] = '', ''
+
+    for author in [adria, clara, guillem, lior]:
+        for j, k in enumerate(contrib.keys()):
+            contrib[k].append(author[j])
+
+    #Table of contributions.
+    table = pd.DataFrame(contrib, index=['Adrià', 'Clara', 'Guillem', 'Lior'])
+    style = table.T.style
+
+    #Style of the table.
+    cell_hover = {
+        'selector': 'td:hover',
+        'props': [('background-color', 'pink')]
+    }
+    headers = {
+        'selector': 'th:not(.index_name)',
+        'props': 'background-color: #b7005c; color: white;'
+    }
+    style.set_table_styles([cell_hover, headers])
+    style.set_table_styles([
+        {'selector': 'th.col_heading', 'props': 'text-align: center;'},
+        {'selector': 'th.col_heading.level0', 'props': 'font-size: 1.5em;'},
+        {'selector': 'td', 'props': 'text-align: center; font-weight: bold;'}
+    ], overwrite=False)
+
+    _, col, _ = st.columns([1, 3, 1])
+    with col:
+        st.table(style.applymap(lambda _: 'background-color: #f6f2f4'))
 
 def waiting_room():
     for _ in range(100):
