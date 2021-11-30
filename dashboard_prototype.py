@@ -87,7 +87,7 @@ DICT = {
     'Physical': 'v_fisica',
     'Separada': 'Separated',
     'Setembre': 'September',
-    'Sex of the victim': 'sexe',
+    'Gender of the victim': 'sexe',
     'Sexual': 'v_sexual',
     'Soltera': 'Single',
     'Victim-aggressor relationship': 'relacioagressor',
@@ -361,12 +361,15 @@ def main():
         label='Select a section',
         options=[
             'Title',
-            'Results map',
-            'Results line',
-            'Results pie',
-            'Results chord',
-            'Correlations',
+            'Methodology',
+            'Results',
+            add_hspace('-', 4) + ' Spatial and temporal dependece',
+            add_hspace('-', 4) + ' Aggregated spatial evolution',
+            add_hspace('-', 4) + ' Analysis of the phone calls',
+            add_hspace('-', 4) + ' Violence interconnections',
+            add_hspace('-', 4) + ' Correlation',
             'Conclusions',
+            'Critique',
             'Contributions'
         ]
     )
@@ -382,23 +385,28 @@ def main():
     if last_page != control:
         with open(FILENAME, 'w') as outputfile:
             outputfile.write(f'{control}\n')
-
         waiting_room()
 
     if control == 'Title':
         title()
-    elif control == 'Results map':
+    elif control == 'Methodology':
+        methodology()
+    elif control == 'Results':
+        results()
+    elif control == add_hspace('-', 4) + ' Spatial and temporal dependece':
         results_map(phone_data, af)
-    elif control == 'Results line':
+    elif control == add_hspace('-', 4) + ' Aggregated spatial evolution':
         results_line(phone_data[1])
-    elif control == 'Results pie':
+    elif control == add_hspace('-', 4) + ' Analysis of the phone calls':
         results_pie(cf)
-    elif control == 'Results chord':
+    elif control == add_hspace('-', 4) + ' Violence interconnections':
         results_chord(af, evolution)
-    elif control == 'Correlations':
-        correlations(calls_cases)
+    elif control == add_hspace('-', 4) + ' Correlation':
+        correlation(calls_cases)
     elif control == 'Conclusions':
         conclusions()
+    elif control == 'Critique':
+        critique()
     elif control == 'Contributions':
         contributions()
 
@@ -470,6 +478,12 @@ def title():
     st.markdown(n, unsafe_allow_html=True)
     add_vspace(4)
     st.markdown(a, unsafe_allow_html=True)
+
+def methodology():
+    pass
+
+def results():
+    pass
 
 def results_map(data, df):
     global CMAP_NAME, FIRST_YEAR, LIST_YEARS, MONTH_CONVERSION, NUMBER_MONTHS
@@ -599,7 +613,7 @@ def results_pie(df):
             options=[
                 'Age of the victim',
                 'Civil status of the victim',
-                'Sex of the victim',
+                'Gender of the victim',
                 'Victim-aggressor relationship'
             ]
         )
@@ -710,7 +724,7 @@ def results_chord(df, evolution):
             add_vspace(5)
             st.pyplot(bar_fig)
 
-def correlations(data):
+def correlation(data):
     global C1, C2, LIST_YEARS
 
     #Sidebar options.
@@ -783,6 +797,9 @@ def contributions():
     _, col, _ = st.columns([1, 3, 1])
     with col:
         st.table(style.applymap(lambda _: 'background-color: #f6f2f4'))
+
+def critique():
+    pass
 
 def waiting_room():
     for _ in range(100):
