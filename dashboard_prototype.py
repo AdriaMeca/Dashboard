@@ -414,6 +414,14 @@ def main():
 #Pages of the dashboard.
 def title():
     #Title.
+    m = """
+        <div style='font-size: 45px; font-weight: bold; text-align: center'>
+            MSc Physics of Complex Systems and Biophysics<br>
+            <p style='font-size: 30px'>
+                Analysis and Visualization of Big Data
+            </p>
+        </div>
+    """
     t = """
         <h1 style='font-size: 60px; text-align: center'>
             Gender violence, a dark shadow of the pandemic
@@ -455,17 +463,20 @@ def title():
     #Abstract.
     a = """
         <div style='display: grid; text-align: center'>
-            <div class='grid-item' style='grid-row-start: 1; font-size: 30px'></div>
-            <div class='grid-item' style='grid-row-start: 1; font-size: 30px; text-align: left; width: 1200px'>
-                <b>Abstract:</b> Our society is assimilating the changes that
-                SARS-CoV-2 has induced. An important and sensitive topic is gender violence.
-                Some information has been exposed in general media regarding the relation
-                between the famous pandemic spike, and a big increase in gender-based
-                complaints. However, the lack of scientific rigor envelops the whole topic.
-                Here, we shed light on how and why gender violence has increased due to
-                Covid-19. These results can have an immediate application in resouce
-                distribution of victim attention through telephone lines, and in the
-                preparation of awareness campaigns.
+            <div class='grid-item' style='grid-row-start: 1; font-size: 25px'></div>
+            <div class='grid-item' style='grid-row-start: 1; font-size: 25px; text-align: left; width: 1200px'>
+                <b>Abstract:</b> Among all the things that SARS-CoV-2 has affected,
+                gender violence is probably the most important. Information has been
+                exposed regarding the relation between the pandemic spike and a big
+                increase in gender-based complaints. However, the lack of scientific
+                rigor envelops the whole topic. Here, we shed light on how and why gender
+                violence has increased due to Covid-19, and we conclude that prior to the
+                pandemic the number of complaints was homogeneous in time and space, and
+                that the profile of the victim doesn't change significantly over the years.
+                We also study the connections between different types of violence, and we
+                show if there is any correlation between complaints and real cases. These
+                results can have an immediate application in resource distribution of
+                victim attention, and in the preparation of awareness campaigns.
             </div>
         </div>
     """
@@ -473,10 +484,10 @@ def title():
     _, col, _ = st.columns([1, 1, 1])
     with col:
         st.image(image="./images/ub-logo.png")
+    st.markdown(m, unsafe_allow_html=True)
     st.markdown(t, unsafe_allow_html=True)
-    add_vspace(1)
     st.markdown(n, unsafe_allow_html=True)
-    add_vspace(4)
+    add_vspace(1)
     st.markdown(a, unsafe_allow_html=True)
 
 def methodology():
