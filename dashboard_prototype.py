@@ -489,7 +489,8 @@ def results_map(data, df):
     global CMAP_NAME, FIRST_YEAR, LIST_YEARS, MONTH_CONVERSION, NUMBER_MONTHS
 
     #DrMeca: interactive craziness.
-    chosen_year = st.select_slider('Select a year', LIST_YEARS, key='map')
+    st.sidebar.header('Plot widgets')
+    chosen_year = st.sidebar.select_slider('Select a year', LIST_YEARS, key='map')
     number_years = (chosen_year-FIRST_YEAR) + 1
 
     month_fig, ax = plt.subplots()
@@ -574,16 +575,15 @@ def results_map(data, df):
 
 def results_line(y_data):
     #Sidebar options.
-    st.sidebar.header("Animation's control panel")
-    line_ani = st.sidebar.checkbox('Line animation on')
+    st.sidebar.header("Plot widgets")
+    line_ani = st.sidebar.checkbox('Animation on')
+    period = st.sidebar.selectbox('Period', options=[1, 3, 4, 6])
 
     #DrMeca: one of my renowned animations.
     ani_fig, ax = plt.subplots()
 
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        period = st.selectbox('Period', options=[1, 3, 4, 6])
-    with col2:
+    _, col, _ = st.columns([1, 3, 1])
+    with col:
         get_me_line(0, y_data, period, ani_fig, ax)
         line = st.pyplot(ani_fig)
 
@@ -600,28 +600,24 @@ def results_pie(df):
     global LIST_YEARS
 
     #Sidebar options.
-    st.sidebar.header("Animation's control panel")
-    pie_ani = st.sidebar.checkbox('Pie animation on')
+    st.sidebar.header("Plot widgets")
+    pie_ani = st.sidebar.checkbox('Animation on')
+    topic = st.sidebar.selectbox(
+        label='Select a topic',
+        options=[
+            'Age of the victim',
+            'Civil status of the victim',
+            'Gender of the victim',
+            'Victim-aggressor relationship'
+        ]
+    )
+    year = st.sidebar.select_slider('Select a year', LIST_YEARS, key='pie')
 
     #DraClara: the awesome pie chart.
     pie_fig, ax = plt.subplots()
 
-    col1, _, col2 = st.columns([2, 1, 2])
-    with col1:
-        topic = st.selectbox(
-            label='Select a topic',
-            options=[
-                'Age of the victim',
-                'Civil status of the victim',
-                'Gender of the victim',
-                'Victim-aggressor relationship'
-            ]
-        )
-    with col2:
-        year = st.select_slider('Select a year', LIST_YEARS, key='pie')
-
-    _, col3, _ = st.columns([1, 3, 1])
-    with col3:
+    _, col, _ = st.columns([1, 3, 1])
+    with col:
         get_me_pie(0, df, topic, year, pie_fig, ax)
         pie = st.pyplot(pie_fig)
 
@@ -639,7 +635,8 @@ def results_chord(df, evolution):
 
     #DrGuillem: madness as a plot.
     new_options = ['Sexual', 'Economical', 'Physical', 'Psychological']
-    types_of_violence = st.multiselect(
+    st.sidebar.header("Plot widgets")
+    types_of_violence = st.sidebar.multiselect(
         label='Select a violence',
         options=new_options,
         default=new_options[:2]
@@ -728,8 +725,8 @@ def correlation(data):
     global C1, C2, LIST_YEARS
 
     #Sidebar options.
-    st.sidebar.header("Animation's control panel")
-    corr_ani = st.sidebar.button('Animation on')
+    st.sidebar.header("Plot widgets")
+    corr_ani = st.sidebar.button('Show results')
 
     corr_fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
 
