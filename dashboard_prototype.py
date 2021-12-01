@@ -868,7 +868,30 @@ def conclusions():
             Conclusions
         </h1>
     """
+    a = """
+        <div style='display: grid; text-align: center'>
+            <div class='grid-item' style='grid-row-start: 1;'></div>
+            <div class='grid-item' style='grid-row-start: 1; text-align: left; width: 600px'>
+                <p style='font-size: 20px'>
+                    \u25b6 Before the pandemic the number of phone calls (gender-based complaints)
+                    was homogeneous, but there is an increase due to the confinement;
+                </p>
+                <p style='font-size: 20px'>
+                    \u25b6 The profile of the victim doesn't change significantly over the years,
+                    but there is a growth of domestic cases in 2020;
+                </p>
+                <p style='font-size: 20px'>
+                    \u25b6 The most prevalent violence is psychological;
+                </p>
+                <p style='font-size: 20px'>
+                    \u25b6 There is no evident correlation between phone calls and real cases
+                    (in Catalonia at least).
+                </p>
+            </div>
+        </div>
+    """
     st.markdown(t, unsafe_allow_html=True)
+    st.markdown(a, unsafe_allow_html=True)
 
 def critique():
     t = """
