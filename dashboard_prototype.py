@@ -367,7 +367,7 @@ def main():
             add_hspace('-', 4) + ' Aggregated spatial evolution',
             add_hspace('-', 4) + ' Analysis of the phone calls',
             add_hspace('-', 4) + ' Violence interconnections',
-            add_hspace('-', 4) + ' Correlation',
+            add_hspace('-', 4) + ' Is there any correlation?',
             'Conclusions',
             'Critique',
             'Contributions'
@@ -401,7 +401,7 @@ def main():
         results_pie(cf)
     elif control == add_hspace('-', 4) + ' Violence interconnections':
         results_chord(af, evolution)
-    elif control == add_hspace('-', 4) + ' Correlation':
+    elif control == add_hspace('-', 4) + ' Is there any correlation?':
         correlation(calls_cases)
     elif control == 'Conclusions':
         conclusions()
@@ -706,7 +706,7 @@ def results_pie(df):
             """
             t2 = """
                 <p style='font-size: 20px'>
-                    \u25b6 There is an important increase in the number of "Unknowns";
+                    \u25b6 There is an important increase in the number of "Unknowns".
                 </p>
             """
             st.markdown(t1, unsafe_allow_html=True)
@@ -715,14 +715,14 @@ def results_pie(df):
             t1 = """
                 <p style='font-size: 20px'>
                     \u25b6 There is an increase in domestic cases in 2020 (married and
-                    <i>de facto couple</i>), which is compatible with the lockdown;
+                    <i>de facto couple</i>), which is compatible with the lockdown.
                 </p>
             """
             st.markdown(t1, unsafe_allow_html=True)
         elif topic == 'Gender of the victim':
             t1 = """
                 <p style='font-size: 20px'>
-                    \u25b6 There is no significant change in the gender of the victims in 2020;
+                    \u25b6 There is no significant change in the gender of the victims in 2020.
                 </p>
             """
             st.markdown(t1, unsafe_allow_html=True)
@@ -730,7 +730,7 @@ def results_pie(df):
             t1 = """
                 <p style='font-size: 20px'>
                     \u25b6 There is an increase in domestic cases in 2020 (partner and
-                    family relations), which is compatible with the lockdown;
+                    family relations), which is compatible with the lockdown.
                 </p>
             """
             st.markdown(t1, unsafe_allow_html=True)
