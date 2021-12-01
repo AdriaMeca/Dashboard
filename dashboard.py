@@ -216,14 +216,14 @@ def get_me_corr(i, data, fig, axs):
         LIST_YEARS[:i],
         calls[:i],
         marker='^',
-        label='Normalized number of cases',
+        label='Normalized number of phone calls',
         color=C1
     )
     axs[0].plot(
         LIST_YEARS[:i],
         cases[:i],
         marker='v',
-        label='Normalized number of phone calls',
+        label='Normalized number of cases',
         color=C2
     )
     axs[0].set_xlim(2013-0.5, 2020+0.5)
@@ -522,6 +522,8 @@ def methodology():
     """
     st.markdown(t, unsafe_allow_html=True)
     st.code(code, language='python')
+
+    st.markdown("**Data Management Plan:** [Github repository](https://github.com/AdriaMeca/Dashboard.git).")
 
 def results():
     t = """
@@ -933,6 +935,10 @@ def contributions():
     """
     st.markdown(t, unsafe_allow_html=True)
 
+    #Sidebar options.
+    st.sidebar.header("Thank you!")
+    thanks = st.sidebar.button("Press me")
+
     if isfile(FILENAME):
         os.remove(FILENAME)
 
@@ -988,6 +994,11 @@ def contributions():
     _, col, _ = st.columns([1, 3, 1])
     with col:
         st.table(style.applymap(lambda _: 'background-color: #f6f2f4'))
+
+    if thanks:
+        while True:
+            st.balloons()
+            sleep(5)
 
 def waiting_room():
     for _ in range(100):
