@@ -692,6 +692,11 @@ def results_chord(df, evolution):
     )
     n = len(types_of_violence)
 
+    #Guillem's requested extra plot.
+    extra = st.sidebar.button("Show extra plot")
+    if extra:
+        os.system("python ./guillem.py")
+
     colors = dict()
     for v, c in zip(new_options, [CMAP(int(256*i/3)) for i in range(4)]):
         colors[v] = c
@@ -728,7 +733,8 @@ def results_chord(df, evolution):
                     edge_cmap=CMAP_NAME,
                     edge_color=dim('t').str(),
                     node_color='Option',
-                    labels='Option'
+                    labels='Option',
+                    title='Connections 2020'
                 )
             )
             chord_fig = hv.render(chord, backend='matplotlib')
