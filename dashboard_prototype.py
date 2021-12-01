@@ -496,7 +496,32 @@ def methodology():
             Methodology
         </h1>
     """
+    code = """
+        #Libraries.
+        from holoviews import opts, dim
+        from os.path import isfile
+        from sodapy import Socrata
+        from time import sleep
+
+        import geopandas as gpd
+        import holoviews as hv
+        import matplotlib.animation as ani
+        import matplotlib.cm as cm
+        import matplotlib.pyplot as plt
+        import numpy as np
+        import os
+        import pandas as pd
+        import streamlit as st
+
+        client = Socrata("analisi.transparenciacatalunya.cat", None)
+
+        #Database of phone calls (complaints) from victims of gender violence.
+        result1 = client.get("q2sg-894k", limit=150000)
+        #Database of real cases of gender violence.
+        result2 = client.get("6rcq-y46b", limit=300)
+    """
     st.markdown(t, unsafe_allow_html=True)
+    st.code(code, language='python')
 
 def results():
     t = """
