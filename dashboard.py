@@ -6,7 +6,6 @@ from time import sleep
 
 import geopandas as gpd
 import holoviews as hv
-import matplotlib.animation as ani
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -505,7 +504,6 @@ def methodology():
 
         import geopandas as gpd
         import holoviews as hv
-        import matplotlib.animation as ani
         import matplotlib.cm as cm
         import matplotlib.pyplot as plt
         import numpy as np
