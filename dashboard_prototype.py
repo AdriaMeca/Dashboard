@@ -683,7 +683,7 @@ def results_pie(df):
     #DraClara: the awesome pie chart.
     pie_fig, ax = plt.subplots()
 
-    _, col, _ = st.columns([1, 3, 1])
+    _, col, _ = st.columns([1, 2, 1])
     with col:
         get_me_pie(0, df, topic, year, pie_fig, ax)
         pie = st.pyplot(pie_fig)
@@ -696,6 +696,43 @@ def results_pie(df):
             for j in range(n-1, -1, -1):
                 get_me_pie(j, df, topic, year, pie_fig, ax)
                 pie.pyplot(pie_fig)
+
+        if topic == 'Age of the victim':
+            t1 = """
+                <p style='font-size: 20px'>
+                    \u25b6 There is no significant change in the ages of the victims in 2020;
+                </p>
+            """
+            t2 = """
+                <p style='font-size: 20px'>
+                    \u25b6 There is an important increase in the number of "Unknowns";
+                </p>
+            """
+            st.markdown(t1, unsafe_allow_html=True)
+            st.markdown(t2, unsafe_allow_html=True)
+        elif topic == 'Civil status of the victim':
+            t1 = """
+                <p style='font-size: 20px'>
+                    \u25b6 There is an increase in domestic cases in 2020 (married and
+                    <i>de facto couple</i>), which is compatible with the lockdown;
+                </p>
+            """
+            st.markdown(t1, unsafe_allow_html=True)
+        elif topic == 'Gender of the victim':
+            t1 = """
+                <p style='font-size: 20px'>
+                    \u25b6 There is no significant change in the gender of the victims in 2020;
+                </p>
+            """
+            st.markdown(t1, unsafe_allow_html=True)
+        else:
+            t1 = """
+                <p style='font-size: 20px'>
+                    \u25b6 There is an increase in domestic cases in 2020 (partner and
+                    family relations), which is compatible with the lockdown;
+                </p>
+            """
+            st.markdown(t1, unsafe_allow_html=True)
 
 def results_chord(df, evolution):
     global CMAP, DICT, LIST_YEARS
