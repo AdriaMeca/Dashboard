@@ -895,12 +895,35 @@ def conclusions():
 
 def critique():
     t = """
-        <h1 style='font-size: 200px; text-align: center'>
+        <h1 style='font-size: 60px; text-align: center'>
             Critique
         </h1>
     """
-    add_vspace(10)
     st.markdown(t, unsafe_allow_html=True)
+    add_vspace(8)
+
+    #Sidebar attack.
+    st.sidebar.header("Moves")
+    attack = st.sidebar.button("Adrià's constructive criticism")
+
+    if attack:
+        i = 0
+        while True:
+            colors = ['red', 'orange', 'yellow', 'green', 'blue', 'darkblue', 'violet']
+            c = f"""
+                <h1 style='font-size: 200px; text-align: center; color: {colors[i]}'>
+                    3 credits
+                </h1>
+            """
+
+            temp = st.empty()
+            with temp.container():
+                st.markdown(c, unsafe_allow_html=True)
+                sleep(0.5)
+            temp.empty()
+
+            i += 1
+            if i > 6: i = 0
 
 def contributions():
     t = """
