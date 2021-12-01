@@ -525,10 +525,11 @@ def methodology():
 
 def results():
     t = """
-        <h1 style='font-size: 60px; text-align: center'>
+        <h1 style='font-size: 200px; text-align: center'>
             Results
         </h1>
     """
+    add_vspace(10)
     st.markdown(t, unsafe_allow_html=True)
 
 def results_map(data, df):
@@ -871,10 +872,11 @@ def conclusions():
 
 def critique():
     t = """
-        <h1 style='font-size: 60px; text-align: center'>
+        <h1 style='font-size: 200px; text-align: center'>
             Critique
         </h1>
     """
+    add_vspace(10)
     st.markdown(t, unsafe_allow_html=True)
 
 def contributions():
